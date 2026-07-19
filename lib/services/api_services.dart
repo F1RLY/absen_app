@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/attendance.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.18.27/absen_api';
+  static const String baseUrl = 'http://192.168.100.101/absen_api';
 
   Future<Map<String, dynamic>> login(String nik, String password) async {
     final response = await http.post(
@@ -30,30 +30,31 @@ class ApiService {
     }
   }
 
-  // --- CEK LOGIN ---
+// cek login
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('is_logged_in') ?? false;
   }
 
-  // --- AMBIL USER ID ---
+// ambil id
   static Future<int?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt('user_id');
   }
 
-  // --- AMBIL NAMA USER ---
+// ambil nama
   static Future<String?> getUserName() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_name');
   }
 
-  // --- LOGOUT ---
+  // logout
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }
 
+// kirim absen
   Future<bool> submitAttendance(String type) async {
     final userId = await ApiService.getUserId();
     if (userId == null) throw Exception('User tidak login');
@@ -72,6 +73,7 @@ class ApiService {
     }
   }
 
+// ambil absen
   Future<List<AttendanceRecord>> getAttendanceHistory() async {
     final userId = await ApiService.getUserId();
     if (userId == null) throw Exception('User tidak login');

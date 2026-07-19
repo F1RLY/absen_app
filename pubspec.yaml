@@ -13,8 +13,8 @@ dependencies:
   http: ^1.2.0
   shared_preferences: ^2.2.2
   intl: ^0.18.1
-  mobile_scanner: ^4.0.1                   
-
+  mobile_scanner: ^4.0.1
+  table_calendar: ^3.0.9
 
   cupertino_icons: ^1.0.8
 
