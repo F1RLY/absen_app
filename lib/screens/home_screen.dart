@@ -30,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUserName();
     _loadCalendarData();
+    // update jam tiap detik biar live seperti di referensi
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
@@ -94,11 +95,16 @@ class _HomeScreenState extends State<HomeScreen> {
       return (label: 'Hari Libur', color: Colors.grey);
     }
     final data = _todayAttendance;
-    if (data != null && data.hasMasuk && data.hasKeluar) {
-      return (label: 'Absen Lengkap', color: Colors.green);
-    }
     if (data != null && data.hasMasuk) {
-      return (label: 'Sudah Absen Masuk', color: Colors.blue);
+      final telat = isLate(data.masukTime!);
+      if (data.hasKeluar) {
+        return telat
+            ? (label: 'Absen Lengkap (Telat Masuk)', color: Colors.orange)
+            : (label: 'Absen Lengkap', color: Colors.green);
+      }
+      return telat
+          ? (label: 'Sudah Absen Masuk (Telat)', color: Colors.orange)
+          : (label: 'Sudah Absen Masuk', color: Colors.blue);
     }
     return (label: 'Belum Absen', color: Colors.red);
   }
@@ -178,45 +184,31 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                dateLabel,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
+              Text(dateLabel,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 4),
               Text(
                 status == AttendanceDayStatus.libur
                     ? 'Hari Libur'
                     : status == AttendanceDayStatus.alpa
-                    ? 'Tidak Hadir'
-                    : status == AttendanceDayStatus.hadir
-                    ? 'Hadir'
-                    : 'Belum ada data',
+                        ? 'Tidak Hadir'
+                        : status == AttendanceDayStatus.telat
+                            ? 'Hadir (Telat)'
+                            : status == AttendanceDayStatus.hadir
+                                ? 'Hadir'
+                                : 'Belum ada data',
                 style: TextStyle(
                   color: _dotColor(status),
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const Divider(height: 24),
-              _detailRow(
-                Icons.login,
-                Colors.green,
-                'Absen Masuk',
-                data?.hasMasuk == true
-                    ? timeFormat.format(data!.masukTime!)
-                    : '-',
-              ),
+              _detailRow(Icons.login, Colors.green, 'Absen Masuk',
+                  data?.hasMasuk == true ? timeFormat.format(data!.masukTime!) : '-'),
               const SizedBox(height: 8),
-              _detailRow(
-                Icons.logout,
-                Colors.orange,
-                'Absen Keluar',
-                data?.hasKeluar == true
-                    ? timeFormat.format(data!.keluarTime!)
-                    : '-',
-              ),
+              _detailRow(Icons.logout, Colors.orange, 'Absen Keluar',
+                  data?.hasKeluar == true ? timeFormat.format(data!.keluarTime!) : '-'),
               const SizedBox(height: 8),
             ],
           ),
@@ -244,6 +236,8 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (status) {
       case AttendanceDayStatus.hadir:
         return Colors.green;
+      case AttendanceDayStatus.telat:
+        return Colors.orange;
       case AttendanceDayStatus.alpa:
         return Colors.red;
       case AttendanceDayStatus.libur:
@@ -334,10 +328,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildGreetingCard() {
     final status = _statusToday;
     final timeLabel = DateFormat('HH:mm:ss').format(_now);
-    final dateLabel = DateFormat(
-      'EEEE, dd MMMM yyyy',
-      'id_ID',
-    ).format(_now).toUpperCase();
+    final dateLabel = DateFormat('EEEE, dd MMMM yyyy', 'id_ID')
+        .format(_now)
+        .toUpperCase();
 
     final data = _todayAttendance;
     final canMasuk = !_isTodayLibur && data?.hasMasuk != true;
@@ -348,10 +341,8 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$_greeting, $_userName!',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          Text('$_greeting, $_userName!',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
           Row(
             children: [
@@ -364,17 +355,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 6),
-              Text(
-                'Status hari ini: ',
-                style: TextStyle(color: Colors.grey[700]),
-              ),
-              Text(
-                status.label,
-                style: TextStyle(
-                  color: status.color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text('Status hari ini: ', style: TextStyle(color: Colors.grey[700])),
+              Text(status.label,
+                  style: TextStyle(color: status.color, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 18),
@@ -468,16 +451,12 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Aktivitas Terbaru',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
+              const Text('Aktivitas Terbaru',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, '/history'),
-                child: const Text(
-                  'Lihat Semua',
-                  style: TextStyle(color: Colors.blue, fontSize: 13),
-                ),
+                child: const Text('Lihat Semua',
+                    style: TextStyle(color: Colors.blue, fontSize: 13)),
               ),
             ],
           ),
@@ -485,10 +464,8 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_recentRecords.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text(
-                'Belum ada aktivitas.',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
+              child: Text('Belum ada aktivitas.',
+                  style: TextStyle(color: Colors.grey[600])),
             )
           else
             ..._recentRecords.map((r) => _activityTile(r)),
@@ -500,10 +477,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _activityTile(AttendanceRecord r) {
     final isMasuk = r.type == 'masuk';
     final timeLabel = DateFormat('HH:mm', 'id_ID').format(r.timestamp);
-    final dateLabel = DateFormat(
-      'dd MMM',
-      'id_ID',
-    ).format(r.timestamp).toUpperCase();
+    final dateLabel = DateFormat('dd MMM', 'id_ID').format(r.timestamp).toUpperCase();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -532,14 +506,9 @@ class _HomeScreenState extends State<HomeScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                timeLabel,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              Text(
-                dateLabel,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-              ),
+              Text(timeLabel, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(dateLabel,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600])),
             ],
           ),
         ],
@@ -571,10 +540,7 @@ class _HomeScreenState extends State<HomeScreen> {
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
-              titleTextStyle: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
+              titleTextStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             calendarStyle: const CalendarStyle(
               outsideDaysVisible: false,
@@ -588,11 +554,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const Divider(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 14,
+            runSpacing: 8,
             children: [
               _legendItem(Colors.green, 'Hadir', filled: true),
-              _legendItem(Colors.red, 'Alpa/Telat', filled: true),
+              _legendItem(Colors.orange, 'Telat', filled: true),
+              _legendItem(Colors.red, 'Alpa', filled: true),
               _legendItem(Colors.grey, 'Hari Libur', filled: false),
             ],
           ),

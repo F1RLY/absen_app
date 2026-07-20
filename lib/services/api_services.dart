@@ -4,12 +4,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/attendance.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.100.101/absen_api';
+  static const String baseUrl =
+      'https://noncharacterized-hauriant-jerilyn.ngrok-free.dev/absen_api/';
+  static const Map<String, String> _defaultHeaders = {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+  };
 
   Future<Map<String, dynamic>> login(String nik, String password) async {
     final response = await http.post(
       Uri.parse('$baseUrl/login.php'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _defaultHeaders,
       body: jsonEncode({'nik': nik, 'password': password}),
     );
 
@@ -30,38 +35,37 @@ class ApiService {
     }
   }
 
-// cek login
+  // --- CEK LOGIN ---
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('is_logged_in') ?? false;
   }
 
-// ambil id
+  // --- AMBIL USER ID ---
   static Future<int?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt('user_id');
   }
 
-// ambil nama
+  // --- AMBIL NAMA USER ---
   static Future<String?> getUserName() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_name');
   }
 
-  // logout
+  // --- LOGOUT ---
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }
 
-// kirim absen
   Future<bool> submitAttendance(String type) async {
     final userId = await ApiService.getUserId();
     if (userId == null) throw Exception('User tidak login');
 
     final response = await http.post(
       Uri.parse('$baseUrl/absen.php'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _defaultHeaders,
       body: jsonEncode({'user_id': userId, 'type': type}),
     );
 
@@ -73,13 +77,13 @@ class ApiService {
     }
   }
 
-// ambil absen
   Future<List<AttendanceRecord>> getAttendanceHistory() async {
     final userId = await ApiService.getUserId();
     if (userId == null) throw Exception('User tidak login');
 
     final response = await http.get(
       Uri.parse('$baseUrl/history.php?user_id=$userId'),
+      headers: _defaultHeaders,
     );
 
     if (response.statusCode == 200) {
