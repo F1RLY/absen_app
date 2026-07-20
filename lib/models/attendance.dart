@@ -23,7 +23,6 @@ class AttendanceRecord {
   }
 }
 
-/// Menampung absen masuk & keluar untuk satu tanggal tertentu.
 class DailyAttendance {
   final DateTime date;
   final DateTime? masukTime;
@@ -36,36 +35,41 @@ class DailyAttendance {
   bool get isEmpty => !hasMasuk && !hasKeluar;
 }
 
-/// Normalisasi DateTime jadi key tanpa jam/menit/detik, dipakai sebagai
-/// key di Map dan untuk dicocokkan dengan tanggal yang dipilih di kalender.
 DateTime dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
-/// Status kehadiran untuk satu tanggal, dipakai untuk marker kalender.
-enum AttendanceDayStatus { hadir, alpa, libur, none }
+enum AttendanceDayStatus { hadir, telat, alpa, libur, none }
 
-/// Weekend = Sabtu & Minggu dianggap hari libur (belum termasuk
-/// tanggal merah nasional — bisa ditambahkan nanti kalau perlu).
 bool isWeekend(DateTime day) =>
     day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
 
-/// Menentukan status suatu tanggal:
-/// - libur   : jatuh di akhir pekan
-/// - hadir   : ada record absen masuk
-/// - alpa    : sudah lewat (sebelum hari ini), hari kerja, tidak ada absen
-/// - none    : hari ini/masa depan yang belum ada absen (netral, bukan alpa)
+const int lateThresholdHour = 8;
+const int lateThresholdMinute = 0;
+
+bool isLate(DateTime masukTime) {
+  final threshold = DateTime(
+    masukTime.year,
+    masukTime.month,
+    masukTime.day,
+    lateThresholdHour,
+    lateThresholdMinute,
+  );
+  return masukTime.isAfter(threshold);
+}
+
 AttendanceDayStatus getDayStatus(DateTime day, DailyAttendance? data) {
   final target = dateOnly(day);
   final today = dateOnly(DateTime.now());
 
   if (isWeekend(target)) return AttendanceDayStatus.libur;
-  if (data != null && data.hasMasuk) return AttendanceDayStatus.hadir;
+  if (data != null && data.hasMasuk) {
+    return isLate(data.masukTime!)
+        ? AttendanceDayStatus.telat
+        : AttendanceDayStatus.hadir;
+  }
   if (target.isBefore(today)) return AttendanceDayStatus.alpa;
   return AttendanceDayStatus.none;
 }
 
-/// Mengelompokkan list record (yang formatnya flat: satu baris per absen)
-/// menjadi Map<tanggal, DailyAttendance> supaya gampang ditampilkan
-/// di kalender (1 tanggal = 1 entri berisi masuk & keluar).
 Map<DateTime, DailyAttendance> groupAttendanceByDate(
   List<AttendanceRecord> records,
 ) {
@@ -76,16 +80,26 @@ Map<DateTime, DailyAttendance> groupAttendanceByDate(
     final existing = grouped[key];
 
     if (record.type == 'masuk') {
+      final earliest =
+          (existing?.masukTime == null ||
+              record.timestamp.isBefore(existing!.masukTime!))
+          ? record.timestamp
+          : existing.masukTime;
       grouped[key] = DailyAttendance(
         date: key,
-        masukTime: record.timestamp,
+        masukTime: earliest,
         keluarTime: existing?.keluarTime,
       );
     } else if (record.type == 'keluar') {
+      final latest =
+          (existing?.keluarTime == null ||
+              record.timestamp.isAfter(existing!.keluarTime!))
+          ? record.timestamp
+          : existing.keluarTime;
       grouped[key] = DailyAttendance(
         date: key,
         masukTime: existing?.masukTime,
-        keluarTime: record.timestamp,
+        keluarTime: latest,
       );
     }
   }
