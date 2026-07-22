@@ -42,7 +42,7 @@ enum AttendanceDayStatus { hadir, telat, alpa, libur, none }
 bool isWeekend(DateTime day) =>
     day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
 
-const int lateThresholdHour = 8;
+const int lateThresholdHour = 9;
 const int lateThresholdMinute = 0;
 
 bool isLate(DateTime masukTime) {

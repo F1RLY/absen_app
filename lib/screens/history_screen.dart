@@ -15,10 +15,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
 
-  // --- Filter state ---
-  String _typeFilter = 'semua'; // semua | masuk | keluar
-  int? _filterMonth; // null = semua bulan
-  int? _filterYear; // null = semua tahun
+  String _typeFilter = 'semua'; 
+  int? _filterMonth; 
+  int? _filterYear; 
 
   static const _monthNames = [
     'Januari',
@@ -83,9 +82,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }).toList();
   }
 
-  /// Mengelompokkan record terfilter menjadi Map<tanggal, records>,
-  /// urut tanggal terbaru dulu, dan di dalam tanggal urut waktu naik
-  /// (masuk lalu keluar).
   Map<DateTime, List<AttendanceRecord>> get _groupedHistories {
     final Map<DateTime, List<AttendanceRecord>> grouped = {};
     for (final r in _filteredHistories) {
@@ -158,7 +154,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Filter jenis absen
           Row(
             children: [
               _typeChip('semua', 'Semua'),
@@ -169,7 +164,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          // Filter bulan & tahun
           Row(
             children: [
               Expanded(child: _monthDropdown()),

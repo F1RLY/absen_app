@@ -35,25 +35,21 @@ class ApiService {
     }
   }
 
-  // --- CEK LOGIN ---
-  static Future<bool> isLoggedIn() async {
+    static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('is_logged_in') ?? false;
   }
 
-  // --- AMBIL USER ID ---
   static Future<int?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt('user_id');
   }
 
-  // --- AMBIL NAMA USER ---
   static Future<String?> getUserName() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_name');
   }
 
-  // --- LOGOUT ---
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();

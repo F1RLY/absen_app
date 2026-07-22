@@ -20,6 +20,7 @@ class _ScanScreenState extends State<ScanScreen> {
     super.dispose();
   }
 
+
   Future<void> _onDetect(BarcodeCapture capture) async {
     if (!_isScanning || _isProcessing) return;
 
@@ -66,7 +67,7 @@ class _ScanScreenState extends State<ScanScreen> {
             SnackBar(
               content: Text('Absen $result berhasil via QR!'),
               backgroundColor: Colors.green,
-            ),
+            )
           );
         } else {
           throw Exception('Gagal absen');
