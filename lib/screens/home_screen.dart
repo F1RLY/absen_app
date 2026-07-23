@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../services/api_services.dart';
+import 'face_verification_screen.dart';
 import '../models/attendance.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -108,35 +109,22 @@ class _HomeScreenState extends State<HomeScreen> {
     return (label: 'Belum Absen', color: Colors.red);
   }
 
-  Future<void> _doAbsen(String type) async {
-    setState(() => _isSubmitting = true);
-    try {
-      final api = ApiService();
-      final success = await api.submitAttendance(type);
-      if (!mounted) return;
+  Future<void> _goToVerification(String type) async {
+    final success = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => FaceVerificationScreen(type: type)),
+    );
 
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Absen $type berhasil!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-        await _loadCalendarData();
-      } else {
-        throw Exception('Gagal absen');
-      }
-    } catch (e) {
+    if (success == true) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          content: Text('Absen $type berhasil!'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
         ),
       );
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      await _loadCalendarData();
     }
   }
 
@@ -167,6 +155,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showDayDetail(DateTime day) {
     final data = _attendanceMap[dateOnly(day)];
+    debugPrint(
+      'masuk: ${data?.masukTime}, keluar: ${data?.keluarTime}, hasMasuk: ${data?.hasMasuk}, hasKeluar: ${data?.hasKeluar}',
+    );
+
     final status = getDayStatus(day, data);
     final timeFormat = DateFormat('HH:mm:ss', 'id_ID');
     final dateLabel = DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(day);
@@ -248,7 +240,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _formatDuration(Duration d) {
     final jam = d.inHours;
     final menit = d.inMinutes.remainder(60);
-    return '${jam.toString().padLeft(2, '0')}:${menit.toString().padLeft(2, '0')}';
+    final detik = d.inSeconds.remainder(60);
+    return '${jam.toString().padLeft(2, '0')}:${menit.toString().padLeft(2, '0')}:${detik.toString().padLeft(2, '0')}';
   }
 
   Widget _detailRow(IconData icon, Color color, String label, String value) {
@@ -439,7 +432,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ElevatedButton.icon(
                   onPressed: (_isSubmitting || !canMasuk)
                       ? null
-                      : () => _doAbsen('masuk'),
+                      : () => _goToVerification('masuk'),
                   icon: const Icon(Icons.login, size: 18),
                   label: const Text('Absen Masuk'),
                   style: ElevatedButton.styleFrom(
@@ -458,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: OutlinedButton.icon(
                   onPressed: (_isSubmitting || !canKeluar)
                       ? null
-                      : () => _doAbsen('keluar'),
+                      : () => _goToVerification('keluar'),
                   icon: const Icon(Icons.logout, size: 18),
                   label: const Text('Absen Keluar'),
                   style: OutlinedButton.styleFrom(
@@ -522,6 +515,56 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           else
             ..._recentRecords.map((r) => _activityTile(r)),
+          const SizedBox(height: 16),
+          if (_recentRecords.isNotEmpty &&
+              _recentRecords.first.photoUrl != null)
+            _buildLastPhotoCard(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLastPhotoCard() {
+    final last = _recentRecords.first;
+    final label = last.type == 'masuk' ? 'Absen Masuk' : 'Absen Keluar';
+
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Foto Verifikasi Terakhir',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$label - ${DateFormat('HH:mm, dd MMM yyyy', 'id_ID').format(last.timestamp)}',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              last.photoUrl!,
+              headers: ApiService.imageHeaders,
+              height: 200,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const SizedBox(
+                  height: 200,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 200,
+                color: Colors.grey.shade200,
+                alignment: Alignment.center,
+                child: const Text('Gagal memuat foto'),
+              ),
+            ),
+          ),
         ],
       ),
     );

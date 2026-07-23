@@ -3,12 +3,14 @@ class AttendanceRecord {
   final int userId;
   final String type;
   final DateTime timestamp;
+  final String? photoUrl;
 
   AttendanceRecord({
     required this.id,
     required this.userId,
     required this.type,
     required this.timestamp,
+    required this.photoUrl,
   });
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
@@ -19,6 +21,7 @@ class AttendanceRecord {
       timestamp: json['timestamp'] != null
           ? DateTime.parse(json['timestamp'])
           : DateTime.now(),
+      photoUrl: json['photo_url'],
     );
   }
 }

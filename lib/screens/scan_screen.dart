@@ -56,21 +56,22 @@ class _ScanScreenState extends State<ScanScreen> {
     );
 
     if (result != null) {
+      final type = result;
       try {
         final api = ApiService();
-        final success = await api.submitAttendance(result);
+        final response = await api.submitAttendance(type);
 
         if (!mounted) return;
 
-        if (success) {
+        if (response['success'] == true) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Absen $result berhasil via QR!'),
+              content: Text('Absen $type berhasil via QR!'),
               backgroundColor: Colors.green,
             )
           );
         } else {
-          throw Exception('Gagal absen');
+          throw Exception(response['message'] ?? 'Gagal absen');
         }
       } catch (e) {
         if (!mounted) return;

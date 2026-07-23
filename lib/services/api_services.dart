@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/attendance.dart';
@@ -8,6 +9,10 @@ class ApiService {
       'https://noncharacterized-hauriant-jerilyn.ngrok-free.dev/absen_api/';
   static const Map<String, String> _defaultHeaders = {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+  };
+
+  static const Map<String, String> imageHeaders = {
     'ngrok-skip-browser-warning': 'true',
   };
 
@@ -35,7 +40,7 @@ class ApiService {
     }
   }
 
-    static Future<bool> isLoggedIn() async {
+  static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('is_logged_in') ?? false;
   }
@@ -55,19 +60,26 @@ class ApiService {
     await prefs.clear();
   }
 
-  Future<bool> submitAttendance(String type) async {
+  Future<Map<String, dynamic>> submitAttendance(String type, [File? photo]) async {
     final userId = await ApiService.getUserId();
     if (userId == null) throw Exception('User tidak login');
 
-    final response = await http.post(
+    final request = http.MultipartRequest(
+      'POST',
       Uri.parse('$baseUrl/absen.php'),
-      headers: _defaultHeaders,
-      body: jsonEncode({'user_id': userId, 'type': type}),
     );
+    request.headers['ngrok-skip-browser-warning'] = 'true';
+    request.fields['user_id'] = userId.toString();
+    request.fields['type'] = type;
+    if (photo != null) {
+      request.files.add(await http.MultipartFile.fromPath('photo', photo.path));
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['success'] == true;
+      return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
       throw Exception('Gagal mengirim absen');
     }
