@@ -116,102 +116,104 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
       ),
-      body: FutureBuilder<void>(
-        future: _initFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            );
-          }
-          if (snapshot.hasError || _controller == null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  'Gagal mengakses kamera: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.white),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            );
-          }
-
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              CameraPreview(_controller!),
-              Center(
-                child: Container(
-                  width: 240,
-                  height: 300,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: _errorMessage != null ? Colors.red : Colors.white,
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(150),
+      body: SafeArea(
+        child: FutureBuilder<void>(
+          future: _initFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              );
+            }
+            if (snapshot.hasError || _controller == null) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'Gagal mengakses kamera: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.white),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-              Positioned(
-                bottom: 40,
-                left: 20,
-                right: 20,
-                child: Column(
-                  children: [
-                    if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.85),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          _errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      )
-                    else
-                      const Text(
-                        'Posisikan wajah Anda di dalam bingkai',
-                        style: TextStyle(color: Colors.white, fontSize: 14),
+              );
+            }
+        
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                CameraPreview(_controller!),
+                Center(
+                  child: Container(
+                    width: 240,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _errorMessage != null ? Colors.red : Colors.white,
+                        width: 2,
                       ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isProcessing ? null : _captureAndVerify,
-                        icon: _isProcessing
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.camera_alt),
-                        label: Text(
-                          _isProcessing
-                              ? 'Memverifikasi...'
-                              : 'Ambil Foto & $label',
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                      ),
+                      borderRadius: BorderRadius.circular(150),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
+                Positioned(
+                  bottom: 40,
+                  left: 20,
+                  right: 20,
+                  child: Column(
+                    children: [
+                      if (_errorMessage != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.85),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        )
+                      else
+                        const Text(
+                          'Posisikan wajah Anda di dalam bingkai',
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _isProcessing ? null : _captureAndVerify,
+                          icon: _isProcessing
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.camera_alt),
+                          label: Text(
+                            _isProcessing
+                                ? 'Memverifikasi...'
+                                : 'Ambil Foto & $label',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
