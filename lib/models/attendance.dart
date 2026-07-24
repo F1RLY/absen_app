@@ -30,8 +30,16 @@ class DailyAttendance {
   final DateTime date;
   final DateTime? masukTime;
   final DateTime? keluarTime;
+  final String? masukPhotoUrl;
+  final String? keluarPhotoUrl;
 
-  DailyAttendance({required this.date, this.masukTime, this.keluarTime});
+  DailyAttendance({
+    required this.date,
+    this.masukTime,
+    this.keluarTime,
+    this.masukPhotoUrl,
+    this.keluarPhotoUrl,
+  });
 
   bool get hasMasuk => masukTime != null;
   bool get hasKeluar => keluarTime != null;
@@ -88,10 +96,15 @@ Map<DateTime, DailyAttendance> groupAttendanceByDate(
               record.timestamp.isBefore(existing!.masukTime!))
           ? record.timestamp
           : existing.masukTime;
+      final earliestPhoto = earliest == record.timestamp
+          ? record.photoUrl
+          : existing?.masukPhotoUrl;
       grouped[key] = DailyAttendance(
         date: key,
         masukTime: earliest,
         keluarTime: existing?.keluarTime,
+        masukPhotoUrl: earliestPhoto,
+        keluarPhotoUrl: existing?.keluarPhotoUrl,
       );
     } else if (record.type == 'keluar') {
       final latest =
@@ -99,10 +112,15 @@ Map<DateTime, DailyAttendance> groupAttendanceByDate(
               record.timestamp.isAfter(existing!.keluarTime!))
           ? record.timestamp
           : existing.keluarTime;
+      final latestPhoto = latest == record.timestamp
+          ? record.photoUrl
+          : existing?.keluarPhotoUrl;
       grouped[key] = DailyAttendance(
         date: key,
         masukTime: existing?.masukTime,
         keluarTime: latest,
+        masukPhotoUrl: existing?.masukPhotoUrl,
+        keluarPhotoUrl: latestPhoto,
       );
     }
   }

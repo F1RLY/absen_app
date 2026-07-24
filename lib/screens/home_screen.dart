@@ -165,13 +165,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: SafeArea(
+        final bottomPadding = MediaQuery.of(ctx).viewPadding.bottom;
+
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(20) + EdgeInsets.only(bottom: bottomPadding),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,6 +231,35 @@ class _HomeScreenState extends State<HomeScreen> {
                         )
                       : '-',
                 ),
+                if (data?.masukPhotoUrl != null ||
+                    data?.keluarPhotoUrl != null) ...[
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      if (data?.masukPhotoUrl != null)
+                        Expanded(
+                          child: _photoSlot(
+                            label: 'Absen Masuk',
+                            time: data?.masukTime,
+                            photoUrl: data?.masukPhotoUrl,
+                            color: Colors.green,
+                          ),
+                        ),
+                      if (data?.masukPhotoUrl != null &&
+                          data?.keluarPhotoUrl != null)
+                        const SizedBox(width: 10),
+                      if (data?.keluarPhotoUrl != null)
+                        Expanded(
+                          child: _photoSlot(
+                            label: 'Absen Keluar',
+                            time: data?.keluarTime,
+                            photoUrl: data?.keluarPhotoUrl,
+                            color: Colors.orange,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 8),
               ],
             ),
@@ -321,6 +353,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildGreetingCard(),
               const SizedBox(height: 16),
               _buildRecentActivityCard(),
+              const SizedBox(height: 16),
+              _buildTodayPhotosCard(),
               const SizedBox(height: 16),
               _isLoadingCalendar
                   ? const Padding(
@@ -515,58 +549,115 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           else
             ..._recentRecords.map((r) => _activityTile(r)),
-          const SizedBox(height: 16),
-          if (_recentRecords.isNotEmpty &&
-              _recentRecords.first.photoUrl != null)
-            _buildLastPhotoCard(),
         ],
       ),
     );
   }
 
-  Widget _buildLastPhotoCard() {
-    final last = _recentRecords.first;
-    final label = last.type == 'masuk' ? 'Absen Masuk' : 'Absen Keluar';
+  Widget _buildTodayPhotosCard() {
+    final data = _todayAttendance;
+    final hasMasukPhoto = data?.masukPhotoUrl != null;
+    final hasKeluarPhoto = data?.keluarPhotoUrl != null;
+
+    if (!hasMasukPhoto && !hasKeluarPhoto) return const SizedBox.shrink();
 
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Foto Verifikasi Terakhir',
+            'Foto Verifikasi Hari Ini',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '$label - ${DateFormat('HH:mm, dd MMM yyyy', 'id_ID').format(last.timestamp)}',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-          ),
           const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              last.photoUrl!,
-              headers: ApiService.imageHeaders,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return const SizedBox(
-                  height: 200,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) => Container(
-                height: 200,
-                color: Colors.grey.shade200,
-                alignment: Alignment.center,
-                child: const Text('Gagal memuat foto'),
+          Row(
+            children: [
+              Expanded(
+                child: _photoSlot(
+                  label: 'Absen Masuk',
+                  time: data?.masukTime,
+                  photoUrl: data?.masukPhotoUrl,
+                  color: Colors.green,
+                ),
               ),
-            ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _photoSlot(
+                  label: 'Absen Keluar',
+                  time: data?.keluarTime,
+                  photoUrl: data?.keluarPhotoUrl,
+                  color: Colors.orange,
+                ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _photoSlot({
+    required String label,
+    required DateTime? time,
+    required String? photoUrl,
+    required Color color,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        if (time != null)
+          Text(
+            DateFormat('HH:mm:ss', 'id_ID').format(time),
+            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+          ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: photoUrl != null
+              ? Image.network(
+                  photoUrl,
+                  headers: ApiService.imageHeaders,
+                  height: 140,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return const SizedBox(
+                      height: 140,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 140,
+                    color: Colors.grey.shade200,
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'Gagal memuat foto',
+                      style: TextStyle(fontSize: 11),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              : Container(
+                  height: 140,
+                  color: Colors.grey.shade100,
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Belum ada',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  ),
+                ),
+        ),
+      ],
     );
   }
 
